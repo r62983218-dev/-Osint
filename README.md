@@ -1,29 +1,34 @@
-🐼 OSINT Scanner Pro
+ 🔍 OSINT Tool for Termux
 
-Минималистичный OSINT-сканер для Termux.  
-Ищет по номеру телефона, email, логину, ID и домену.
+Инструмент для OSINT в Termux (Android)
 
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![GitHub](https://img.shields.io/badge/Platform-GitHub-brightgreen)
 
-🚀 Быстрый старт
+ ✨ Возможности
+- 🔎 Поиск информации по GitHub пользователям
+- 📦 Поиск репозиториев по ключевым словам
+- 🌐 WHOIS и базовая разведка
+- 📱 Адаптировано специально под Termux
+- 🚀 Простая установка одним скриптом
+
+🚀 Установка
 
 ```bash
-git clone https://github.com/r62983218-dev/Osint
-cd Osint
-chmod +x osint.py
+# Обновляем Termux
+pkg update && pkg upgrade -y
+
+# Клонируем репозиторий
+git clone https://github.com/r62983218-dev/-Osint.git
+cd -Osint
+
+# Запускаем установщик
+python installer.py
 python osint.py
-```
 
 
- 🎯 Что умеет
-
-- 📞 Номер телефона (+7) — оператор, регион, Telegram, GetContact  
-- 📧 Email — утечки (HaveIBeenPwned), Telegram, VK  
-- 👤 Логин — соцсети (GitHub, Twitter, Instagram, YouTube, TikTok)  
-- 🆔 ID — Telegram, VK  
-- 🌐 Домен — WHOIS  
-
-
-📄 Лицензия
-
-MIT  
-Автор: [r62983218-dev](https://github.com/r62983218-dev)
+├── osint.py          # Главный скрипт
+├── installer.py      # Установщик зависимостей
+├── requirements.txt  # Python библиотеки
+└── README.md
+Автор: [r62983218-dev]
