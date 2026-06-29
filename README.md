@@ -1,62 +1,40 @@
-🐼 OSINT Scanner Pro
+ Osint Tool
 
-<p align="center">
-  <img src="https://img.icons8.com/color/96/000000/panda.png" alt="Panda">
-</p>
+Простой и удобный скрипт для автоматической установки всех необходимых зависимостей в Termux.
 
-<p align="center">
-  <strong> OSINT-сканер для Termux с пандой 🐼</strong>
-</p>
+Как установить и запустить
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10-blue?style=flat&logo=python">
-  <img src="https://img.shields.io/badge/Platform-Termux-green?style=flat&logo=android">
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat">
-  <img src="https://img.shields.io/github/stars/r62983218-dev/Osint?style=social">
-</p>
- ✨ Возможности
-
-- 📞 Поиск по номеру телефона (+7)— оператор, регион, Telegram, GetContact
-- 📧 Проверка email на утечки (HaveIBeenPwned)
-- 📱 Поиск профиля в Telegram (по логину, ID и номеру)
-- 📘 Поиск профиля в VK (по логину и ID)
-- 📸 Поиск профиля в Instagram (по логину)
-- 🌐 Поиск в соцсетях (GitHub, Twitter, Reddit, Instagram, YouTube, TikTok)
-- 🏷️ WHOIS для доменов
-- 📄 Сохранение отчётов в JSON
-- 🐼 Крутой ASCII-арт с пандой
-- 📊 Красивый прогресс-бар
-- 🎨 Цветной интерфейс
-
-📱 Установка и запуск (Termux)
-
-1️⃣ Обновление пакетов
+1. Клонирование репозитория
 ```bash
-pkg update && pkg upgrade -y
-```
-
-2️⃣ Установка Python и Git
-
-```bash
-pkg install python git -y
-```
-
-3️⃣ Клонирование репозитория
-
-```bash
-git clone https://github.com/r62983218-dev/Osint
-```
-
-4️⃣ Переход в папку проекта
-
-```bash
-cd Osint
-```
-
-5️⃣ Запуск сканера (всё установится автоматически)
-
-```bash
+git clone https://github.com/твой_ник/твой_репозиторий.git
+cd твой_репозиторий
+ Сделать скрипт исполняемым
+chmod +x osint.py
+3. Запустить установку зависимостей
+./osint.py
+Альтернативный способ запуска (без chmod):
 python osint.py
-```
+Что устанавливает скрипт
+Системные пакеты (Termux)
 
-Примечание: При первом запуске автоматически установятся все необходимые библиотеки.
+Python
+pip
+Git
+Clang (для компиляции)
+libxml2 + libxslt
+
+Python-библиотеки
+
+colorama (цветной вывод)
+requests
+python-whois
+pandas
+numpy
+matplotlib
+openpyxl (работа с Excel)
+beautifulsoup4
+lxml
+
+После установки
+Все зависимости будут автоматически проверены и установлены.
+После успешного завершения скрипта можно запускать свои OSINT-скрипты.
