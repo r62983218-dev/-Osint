@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Мощный OSINT-сканер для Termux с красивым интерфейсом и пандой 🐼</strong>
+  <strong> OSINT-сканер для Termux с пандой 🐼</strong>
 </p>
 
 <p align="center">
@@ -14,11 +14,9 @@
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat">
   <img src="https://img.shields.io/github/stars/r62983218-dev/Osint?style=social">
 </p>
+ ✨ Возможности
 
-
-✨ Возможности
-
-- 📞 **Поиск по номеру телефона** (+7) — оператор, регион, Telegram, GetContact
+- 📞 Поиск по номеру телефона (+7)— оператор, регион, Telegram, GetContact
 - 📧 Проверка email на утечки (HaveIBeenPwned)
 - 📱 Поиск профиля в Telegram (по логину, ID и номеру)
 - 📘 Поиск профиля в VK (по логину и ID)
@@ -30,11 +28,9 @@
 - 📊 Красивый прогресс-бар
 - 🎨 Цветной интерфейс
 
+📱 Установка и запуск (Termux)
 
- 📱 Установка и запуск (Termux)
-
-1️⃣ Обновление пакетов*
-
+1️⃣ Обновление пакетов
 ```bash
 pkg update && pkg upgrade -y
 ```
