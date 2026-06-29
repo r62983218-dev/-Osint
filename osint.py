@@ -71,7 +71,7 @@ def check_and_install_packages():
             subprocess.run(["pkg", "install", package, "-y"], check=True)
             print(Fore.GREEN + f"✅ {name} установлен!\n")
     
-    python_libs = ["requests", "python-whois", "phonenumbers"]
+    python_libs = ["requests", "python-whois"]
     
     print("\n" + Fore.CYAN + "📚 ПРОВЕРКА PYTHON-БИБЛИОТЕК:")
     for lib in python_libs:
@@ -142,10 +142,10 @@ def detect_input_type(target):
     """Определяет тип введённых данных"""
     # Проверка на номер телефона
     phone_patterns = [
-        r'^\+7\d{10}$',      # +7XXXXXXXXXX
-        r'^8\d{10}$',        # 8XXXXXXXXXX
-        r'^7\d{10}$',        # 7XXXXXXXXXX
-        r'^\d{11}$',         # 11 цифр
+        r'^\+7\d{10}$',
+        r'^8\d{10}$',
+        r'^7\d{10}$',
+        r'^\d{11}$',
     ]
     for pattern in phone_patterns:
         if re.match(pattern, target):
@@ -164,14 +164,12 @@ def get_phone_info(phone):
     """Определяет оператора и регион по номеру телефона"""
     info = {"operator": "Неизвестно", "region": "Неизвестно"}
     
-    # Очищаем номер
     clean_phone = re.sub(r'[^0-9]', '', phone)
     if clean_phone.startswith('7') or clean_phone.startswith('8'):
         clean_phone = clean_phone[-10:]
     
     if len(clean_phone) >= 3:
         code = clean_phone[:3]
-        # База кодов операторов России
         operators = {
             '901': 'МТС', '902': 'МТС', '903': 'МТС', '904': 'МТС', '905': 'МТС',
             '906': 'МТС', '907': 'МТС', '908': 'МТС', '909': 'МТС', '910': 'МТС',
@@ -193,7 +191,6 @@ def get_phone_info(phone):
             '986': 'МТС', '987': 'МТС', '988': 'МТС', '989': 'МТС', '990': 'МТС',
             '991': 'МТС', '992': 'МТС', '993': 'МТС', '994': 'МТС', '995': 'МТС',
             '996': 'МТС', '997': 'МТС', '998': 'МТС', '999': 'МТС',
-            
             '900': 'Билайн', '901': 'Билайн', '902': 'Билайн', '903': 'Билайн',
             '904': 'Билайн', '905': 'Билайн', '906': 'Билайн', '907': 'Билайн',
             '908': 'Билайн', '909': 'Билайн', '910': 'Билайн', '911': 'Билайн',
@@ -212,7 +209,6 @@ def get_phone_info(phone):
             '960': 'Билайн', '961': 'Билайн', '962': 'Билайн', '963': 'Билайн',
             '964': 'Билайн', '965': 'Билайн', '966': 'Билайн', '967': 'Билайн',
             '968': 'Билайн', '969': 'Билайн',
-            
             '910': 'Мегафон', '911': 'Мегафон', '912': 'Мегафон', '913': 'Мегафон',
             '914': 'Мегафон', '915': 'Мегафон', '916': 'Мегафон', '917': 'Мегафон',
             '918': 'Мегафон', '919': 'Мегафон', '920': 'Мегафон', '921': 'Мегафон',
@@ -228,7 +224,6 @@ def get_phone_info(phone):
             '958': 'Мегафон', '959': 'Мегафон', '960': 'Мегафон', '961': 'Мегафон',
             '962': 'Мегафон', '963': 'Мегафон', '964': 'Мегафон', '965': 'Мегафон',
             '966': 'Мегафон', '967': 'Мегафон', '968': 'Мегафон', '969': 'Мегафон',
-            
             '900': 'Tele2', '901': 'Tele2', '902': 'Tele2', '903': 'Tele2',
             '904': 'Tele2', '905': 'Tele2', '906': 'Tele2', '907': 'Tele2',
             '908': 'Tele2', '909': 'Tele2', '910': 'Tele2', '911': 'Tele2',
@@ -245,10 +240,8 @@ def get_phone_info(phone):
             '982': 'Tele2', '983': 'Tele2', '984': 'Tele2', '985': 'Tele2',
             '986': 'Tele2', '987': 'Tele2', '988': 'Tele2', '989': 'Tele2',
         }
-        
         info["operator"] = operators.get(code, "Неизвестно")
         
-        # Регион по коду
         regions = {
             '495': 'Москва', '499': 'Москва', '496': 'Московская обл.',
             '812': 'Санкт-Петербург', '813': 'Ленинградская обл.',
@@ -278,7 +271,6 @@ def osint_scan(target, progress_callback=None):
     
     steps = []
     
-    # Определяем шаги в зависимости от типа
     if results["type"] == "phone":
         steps = [
             ("📞 Определение оператора и региона...", "phone_info"),
@@ -301,7 +293,7 @@ def osint_scan(target, progress_callback=None):
         steps = [
             ("🏷️ WHOIS для домена...", "whois"),
         ]
-    else:  # username
+    else:
         steps = [
             ("🌐 Поиск в соцсетях...", "social"),
             ("📱 Поиск в Telegram...", "telegram"),
@@ -311,7 +303,6 @@ def osint_scan(target, progress_callback=None):
     total_steps = len(steps)
     current_step = 0
     
-    # ===== PHONE =====
     if results["type"] == "phone":
         try:
             phone_info = get_phone_info(target)
@@ -323,7 +314,6 @@ def osint_scan(target, progress_callback=None):
         if progress_callback:
             progress_callback(current_step, total_steps, steps[0][0])
         
-        # Поиск в Telegram по номеру (через @userinfobot или прямую ссылку)
         try:
             clean_phone = re.sub(r'[^0-9]', '', target)
             tg_url = f"https://t.me/{clean_phone}"
@@ -335,7 +325,6 @@ def osint_scan(target, progress_callback=None):
                     "method": "по номеру"
                 }
             else:
-                # Проверка через поиск
                 search_url = f"https://t.me/s/{clean_phone}"
                 response2 = requests.get(search_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
                 if response2.status_code == 200:
@@ -353,12 +342,9 @@ def osint_scan(target, progress_callback=None):
         if progress_callback:
             progress_callback(current_step, total_steps, steps[1][0])
         
-        # Проверка через GetContact (API нет, проверяем через сайт)
         try:
             clean_phone = re.sub(r'[^0-9]', '', target)
-            # GetContact проверка через публичную страницу
             gc_url = f"https://api.getcontact.com/number/{clean_phone}"
-            # Это публичный эндпоинт, может не работать
             response = requests.get(gc_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             if response.status_code == 200:
                 results["getcontact"] = {"exists": True, "data": response.text[:200]}
@@ -371,7 +357,6 @@ def osint_scan(target, progress_callback=None):
         if progress_callback:
             progress_callback(current_step, total_steps, steps[2][0])
     
-    # ===== EMAIL =====
     if results["type"] == "email":
         try:
             url = f"https://haveibeenpwned.com/api/v3/breachedaccount/{target}"
@@ -393,9 +378,7 @@ def osint_scan(target, progress_callback=None):
         if progress_callback:
             progress_callback(current_step, total_steps, steps[0][0])
     
-    # ===== ID и USERNAME (общий поиск по соцсетям) =====
     if results["type"] in ["id", "username"]:
-        # Telegram
         try:
             if results["type"] == "id":
                 tg_check = f"https://t.me/id{target}"
@@ -416,7 +399,6 @@ def osint_scan(target, progress_callback=None):
         if progress_callback and current_step <= len(steps):
             progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
         
-        # VK
         try:
             if results["type"] == "id":
                 vk_url = f"https://vk.com/id{target}"
@@ -437,7 +419,6 @@ def osint_scan(target, progress_callback=None):
         if progress_callback and current_step <= len(steps):
             progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
         
-        # Instagram (только для username, ID через Instagram не работает)
         if results["type"] == "username":
             try:
                 inst_url = f"https://instagram.com/{target}"
@@ -456,7 +437,6 @@ def osint_scan(target, progress_callback=None):
             if progress_callback and current_step <= len(steps):
                 progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
     
-    # ===== USERNAME (соцсети) =====
     if results["type"] == "username":
         socials = {
             "GitHub": f"https://github.com/{target}",
@@ -478,7 +458,6 @@ def osint_scan(target, progress_callback=None):
             if progress_callback:
                 progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
     
-    # ===== DOMAIN =====
     if results["type"] == "domain":
         try:
             import whois
@@ -506,7 +485,6 @@ def print_results(data):
     print(Fore.YELLOW + f"📌 Тип: {Fore.WHITE}{data['type']}")
     print(Fore.YELLOW + f"🕐 Время: {Fore.WHITE}{data['timestamp'][:19]}\n")
     
-    # Phone info
     if data.get('phone_info'):
         print(Fore.CYAN + "📞 ИНФОРМАЦИЯ О НОМЕРЕ:")
         for key, value in data['phone_info'].items():
@@ -514,7 +492,6 @@ def print_results(data):
                 print(f"   {Fore.WHITE}{key.capitalize()}: {Fore.GREEN}{value}")
         print()
     
-    # GetContact
     if data.get('getcontact'):
         if data['getcontact'].get('exists'):
             print(Fore.BLUE + f"📘 GETCONTACT: {Fore.WHITE}Найден в базе")
@@ -522,7 +499,6 @@ def print_results(data):
             print(Fore.RED + f"📘 GETCONTACT: {data['getcontact'].get('message', '❌ Не найден')}")
         print()
     
-    # Утечки
     if data['breaches']:
         print(Fore.RED + "💀 УТЕЧКИ:")
         for breach in data['breaches']:
@@ -534,7 +510,6 @@ def print_results(data):
                 print(f"   {Fore.RED}• {breach}")
         print()
     
-    # Telegram
     if data.get('telegram'):
         if data['telegram'].get('exists'):
             print(Fore.BLUE + f"📱 TELEGRAM: {Fore.WHITE}{data['telegram']['url']}")
@@ -544,7 +519,6 @@ def print_results(data):
             print(Fore.RED + f"📱 TELEGRAM: {data['telegram'].get('message', '❌ Не найден')}")
         print()
     
-    # VK
     if data.get('vk'):
         if data['vk'].get('exists'):
             print(Fore.BLUE + f"📘 VK: {Fore.WHITE}{data['vk']['url']}")
@@ -552,7 +526,6 @@ def print_results(data):
             print(Fore.RED + f"📘 VK: {data['vk'].get('message', '❌ Не найден')}")
         print()
     
-    # Instagram
     if data.get('instagram'):
         if data['instagram'].get('exists'):
             print(Fore.MAGENTA + f"📸 INSTAGRAM: {Fore.WHITE}{data['instagram']['url']}")
@@ -560,12 +533,37 @@ def print_results(data):
             print(Fore.RED + f"📸 INSTAGRAM: {data['instagram'].get('message', '❌ Не найден')}")
         print()
     
-    # Соцсети
     if data['social']:
         print(Fore.MAGENTA + "🌐 СОЦИАЛЬНЫЕ СЕТИ:")
         for name, url in data['social'].items():
             print(f"   {Fore.CYAN}{name}: {Fore.WHITE}{url}")
         print()
     
-    # WHOIS
-    if data.get('whois
+    if data.get('whois'):
+        print(Fore.GREEN + "🏷️ WHOIS-ДАННЫЕ:")
+        for key, value in data['whois'].items():
+            if value and not key == "error":
+                print(f"   {Fore.CYAN}{key.capitalize()}: {Fore.WHITE}{value}")
+        if data['whois'].get('error'):
+            print(f"   {Fore.RED}{data['whois']['error']}")
+        print()
+    
+    safe_target = data['target'].replace('@', '_').replace('.', '_').replace('/', '_')
+    filename = f"osint_report_{safe_target}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    try:
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        print(Fore.GREEN + f"✅ Отчёт сохранён: {Fore.WHITE}{filename}\n")
+    except Exception as e:
+        print(Fore.RED + f"❌ Ошибка сохранения: {e}\n")
+
+def show_info():
+    print(Fore.CYAN + "\n╔════════════════════════════════════════╗")
+    print(Fore.CYAN + "║           ℹ️  ИНФОРМАЦИЯ              ║")
+    print(Fore.CYAN + "╚════════════════════════════════════════╝\n")
+    print(Fore.WHITE + "🔹 Название: OSINT Scanner Pro v2.0")
+    print(Fore.WHITE + f"🔹 Автор: @{GITHUB_NICKNAME}")
+    print(Fore.WHITE + "🔹 Описание: Инструмент для поиска информации")
+    print(Fore.WHITE + "           по открытым источникам")
+    print()
+    print(Fore.CYAN + "📌 Функ
