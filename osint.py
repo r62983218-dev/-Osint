@@ -14,6 +14,7 @@ import subprocess
 import time
 import requests
 import json
+import re
 from datetime import datetime
 
 # ============================================
@@ -70,7 +71,7 @@ def check_and_install_packages():
             subprocess.run(["pkg", "install", package, "-y"], check=True)
             print(Fore.GREEN + f"✅ {name} установлен!\n")
     
-    python_libs = ["requests", "python-whois"]
+    python_libs = ["requests", "python-whois", "phonenumbers"]
     
     print("\n" + Fore.CYAN + "📚 ПРОВЕРКА PYTHON-БИБЛИОТЕК:")
     for lib in python_libs:
@@ -137,30 +138,241 @@ def print_menu():
     print()
     print(Fore.YELLOW + "╚════════════════════════════════════════╝")
 
+def detect_input_type(target):
+    """Определяет тип введённых данных"""
+    # Проверка на номер телефона
+    phone_patterns = [
+        r'^\+7\d{10}$',      # +7XXXXXXXXXX
+        r'^8\d{10}$',        # 8XXXXXXXXXX
+        r'^7\d{10}$',        # 7XXXXXXXXXX
+        r'^\d{11}$',         # 11 цифр
+    ]
+    for pattern in phone_patterns:
+        if re.match(pattern, target):
+            return "phone"
+    
+    if "@" in target:
+        return "email"
+    elif target.isdigit():
+        return "id"
+    elif "." in target and not "@" in target:
+        return "domain"
+    else:
+        return "username"
+
+def get_phone_info(phone):
+    """Определяет оператора и регион по номеру телефона"""
+    info = {"operator": "Неизвестно", "region": "Неизвестно"}
+    
+    # Очищаем номер
+    clean_phone = re.sub(r'[^0-9]', '', phone)
+    if clean_phone.startswith('7') or clean_phone.startswith('8'):
+        clean_phone = clean_phone[-10:]
+    
+    if len(clean_phone) >= 3:
+        code = clean_phone[:3]
+        # База кодов операторов России
+        operators = {
+            '901': 'МТС', '902': 'МТС', '903': 'МТС', '904': 'МТС', '905': 'МТС',
+            '906': 'МТС', '907': 'МТС', '908': 'МТС', '909': 'МТС', '910': 'МТС',
+            '911': 'МТС', '912': 'МТС', '913': 'МТС', '914': 'МТС', '915': 'МТС',
+            '916': 'МТС', '917': 'МТС', '918': 'МТС', '919': 'МТС', '920': 'МТС',
+            '921': 'МТС', '922': 'МТС', '923': 'МТС', '924': 'МТС', '925': 'МТС',
+            '926': 'МТС', '927': 'МТС', '928': 'МТС', '929': 'МТС', '930': 'МТС',
+            '931': 'МТС', '932': 'МТС', '933': 'МТС', '934': 'МТС', '935': 'МТС',
+            '936': 'МТС', '937': 'МТС', '938': 'МТС', '939': 'МТС', '940': 'МТС',
+            '941': 'МТС', '942': 'МТС', '943': 'МТС', '944': 'МТС', '945': 'МТС',
+            '946': 'МТС', '947': 'МТС', '948': 'МТС', '949': 'МТС', '950': 'МТС',
+            '951': 'МТС', '952': 'МТС', '953': 'МТС', '954': 'МТС', '955': 'МТС',
+            '956': 'МТС', '957': 'МТС', '958': 'МТС', '959': 'МТС', '960': 'МТС',
+            '961': 'МТС', '962': 'МТС', '963': 'МТС', '964': 'МТС', '965': 'МТС',
+            '966': 'МТС', '967': 'МТС', '968': 'МТС', '969': 'МТС', '970': 'МТС',
+            '971': 'МТС', '972': 'МТС', '973': 'МТС', '974': 'МТС', '975': 'МТС',
+            '976': 'МТС', '977': 'МТС', '978': 'МТС', '979': 'МТС', '980': 'МТС',
+            '981': 'МТС', '982': 'МТС', '983': 'МТС', '984': 'МТС', '985': 'МТС',
+            '986': 'МТС', '987': 'МТС', '988': 'МТС', '989': 'МТС', '990': 'МТС',
+            '991': 'МТС', '992': 'МТС', '993': 'МТС', '994': 'МТС', '995': 'МТС',
+            '996': 'МТС', '997': 'МТС', '998': 'МТС', '999': 'МТС',
+            
+            '900': 'Билайн', '901': 'Билайн', '902': 'Билайн', '903': 'Билайн',
+            '904': 'Билайн', '905': 'Билайн', '906': 'Билайн', '907': 'Билайн',
+            '908': 'Билайн', '909': 'Билайн', '910': 'Билайн', '911': 'Билайн',
+            '912': 'Билайн', '913': 'Билайн', '914': 'Билайн', '915': 'Билайн',
+            '916': 'Билайн', '917': 'Билайн', '918': 'Билайн', '919': 'Билайн',
+            '920': 'Билайн', '921': 'Билайн', '922': 'Билайн', '923': 'Билайн',
+            '924': 'Билайн', '925': 'Билайн', '926': 'Билайн', '927': 'Билайн',
+            '928': 'Билайн', '929': 'Билайн', '930': 'Билайн', '931': 'Билайн',
+            '932': 'Билайн', '933': 'Билайн', '934': 'Билайн', '935': 'Билайн',
+            '936': 'Билайн', '937': 'Билайн', '938': 'Билайн', '939': 'Билайн',
+            '940': 'Билайн', '941': 'Билайн', '942': 'Билайн', '943': 'Билайн',
+            '944': 'Билайн', '945': 'Билайн', '946': 'Билайн', '947': 'Билайн',
+            '948': 'Билайн', '949': 'Билайн', '950': 'Билайн', '951': 'Билайн',
+            '952': 'Билайн', '953': 'Билайн', '954': 'Билайн', '955': 'Билайн',
+            '956': 'Билайн', '957': 'Билайн', '958': 'Билайн', '959': 'Билайн',
+            '960': 'Билайн', '961': 'Билайн', '962': 'Билайн', '963': 'Билайн',
+            '964': 'Билайн', '965': 'Билайн', '966': 'Билайн', '967': 'Билайн',
+            '968': 'Билайн', '969': 'Билайн',
+            
+            '910': 'Мегафон', '911': 'Мегафон', '912': 'Мегафон', '913': 'Мегафон',
+            '914': 'Мегафон', '915': 'Мегафон', '916': 'Мегафон', '917': 'Мегафон',
+            '918': 'Мегафон', '919': 'Мегафон', '920': 'Мегафон', '921': 'Мегафон',
+            '922': 'Мегафон', '923': 'Мегафон', '924': 'Мегафон', '925': 'Мегафон',
+            '926': 'Мегафон', '927': 'Мегафон', '928': 'Мегафон', '929': 'Мегафон',
+            '930': 'Мегафон', '931': 'Мегафон', '932': 'Мегафон', '933': 'Мегафон',
+            '934': 'Мегафон', '935': 'Мегафон', '936': 'Мегафон', '937': 'Мегафон',
+            '938': 'Мегафон', '939': 'Мегафон', '940': 'Мегафон', '941': 'Мегафон',
+            '942': 'Мегафон', '943': 'Мегафон', '944': 'Мегафон', '945': 'Мегафон',
+            '946': 'Мегафон', '947': 'Мегафон', '948': 'Мегафон', '949': 'Мегафон',
+            '950': 'Мегафон', '951': 'Мегафон', '952': 'Мегафон', '953': 'Мегафон',
+            '954': 'Мегафон', '955': 'Мегафон', '956': 'Мегафон', '957': 'Мегафон',
+            '958': 'Мегафон', '959': 'Мегафон', '960': 'Мегафон', '961': 'Мегафон',
+            '962': 'Мегафон', '963': 'Мегафон', '964': 'Мегафон', '965': 'Мегафон',
+            '966': 'Мегафон', '967': 'Мегафон', '968': 'Мегафон', '969': 'Мегафон',
+            
+            '900': 'Tele2', '901': 'Tele2', '902': 'Tele2', '903': 'Tele2',
+            '904': 'Tele2', '905': 'Tele2', '906': 'Tele2', '907': 'Tele2',
+            '908': 'Tele2', '909': 'Tele2', '910': 'Tele2', '911': 'Tele2',
+            '912': 'Tele2', '913': 'Tele2', '914': 'Tele2', '915': 'Tele2',
+            '916': 'Tele2', '917': 'Tele2', '918': 'Tele2', '919': 'Tele2',
+            '950': 'Tele2', '951': 'Tele2', '952': 'Tele2', '953': 'Tele2',
+            '954': 'Tele2', '955': 'Tele2', '956': 'Tele2', '957': 'Tele2',
+            '958': 'Tele2', '959': 'Tele2', '960': 'Tele2', '961': 'Tele2',
+            '962': 'Tele2', '963': 'Tele2', '964': 'Tele2', '965': 'Tele2',
+            '966': 'Tele2', '967': 'Tele2', '968': 'Tele2', '969': 'Tele2',
+            '970': 'Tele2', '971': 'Tele2', '972': 'Tele2', '973': 'Tele2',
+            '974': 'Tele2', '975': 'Tele2', '976': 'Tele2', '977': 'Tele2',
+            '978': 'Tele2', '979': 'Tele2', '980': 'Tele2', '981': 'Tele2',
+            '982': 'Tele2', '983': 'Tele2', '984': 'Tele2', '985': 'Tele2',
+            '986': 'Tele2', '987': 'Tele2', '988': 'Tele2', '989': 'Tele2',
+        }
+        
+        info["operator"] = operators.get(code, "Неизвестно")
+        
+        # Регион по коду
+        regions = {
+            '495': 'Москва', '499': 'Москва', '496': 'Московская обл.',
+            '812': 'Санкт-Петербург', '813': 'Ленинградская обл.',
+            '343': 'Екатеринбург', '383': 'Новосибирск',
+            '845': 'Саратов', '846': 'Самара', '347': 'Уфа',
+            '843': 'Казань', '861': 'Краснодар', '863': 'Ростов-на-Дону',
+        }
+        info["region"] = regions.get(code, "Неизвестно")
+    
+    return info
+
 def osint_scan(target, progress_callback=None):
     results = {
         "target": target,
         "timestamp": datetime.now().isoformat(),
+        "type": detect_input_type(target),
         "social": {},
         "breaches": [],
         "whois": None,
         "telegram": None,
         "vk": None,
+        "instagram": None,
+        "phone_info": None,
+        "getcontact": None,
         "status": "completed"
     }
     
-    steps = [
-        ("📧 Проверка email на утечки...", "breaches"),
-        ("📱 Поиск в Telegram...", "telegram"),
-        ("📘 Поиск в VK...", "vk"),
-        ("🌐 Поиск в соцсетях...", "social"),
-        ("🏷️ WHOIS для доменов...", "whois"),
-    ]
+    steps = []
+    
+    # Определяем шаги в зависимости от типа
+    if results["type"] == "phone":
+        steps = [
+            ("📞 Определение оператора и региона...", "phone_info"),
+            ("📱 Проверка в Telegram...", "telegram"),
+            ("📘 Проверка в GetContact...", "getcontact"),
+        ]
+    elif results["type"] == "email":
+        steps = [
+            ("📧 Проверка email на утечки...", "breaches"),
+            ("📱 Поиск в Telegram...", "telegram"),
+            ("📘 Поиск в VK...", "vk"),
+        ]
+    elif results["type"] == "id":
+        steps = [
+            ("📱 Поиск ID в Telegram...", "telegram"),
+            ("📘 Поиск ID в VK...", "vk"),
+            ("📸 Поиск ID в Instagram...", "instagram"),
+        ]
+    elif results["type"] == "domain":
+        steps = [
+            ("🏷️ WHOIS для домена...", "whois"),
+        ]
+    else:  # username
+        steps = [
+            ("🌐 Поиск в соцсетях...", "social"),
+            ("📱 Поиск в Telegram...", "telegram"),
+            ("📘 Поиск в VK...", "vk"),
+        ]
     
     total_steps = len(steps)
     current_step = 0
     
-    if "@" in target:
+    # ===== PHONE =====
+    if results["type"] == "phone":
+        try:
+            phone_info = get_phone_info(target)
+            results["phone_info"] = phone_info
+        except:
+            results["phone_info"] = {"operator": "Ошибка", "region": "Ошибка"}
+        
+        current_step += 1
+        if progress_callback:
+            progress_callback(current_step, total_steps, steps[0][0])
+        
+        # Поиск в Telegram по номеру (через @userinfobot или прямую ссылку)
+        try:
+            clean_phone = re.sub(r'[^0-9]', '', target)
+            tg_url = f"https://t.me/{clean_phone}"
+            response = requests.get(tg_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            if response.status_code == 200 and "tgme_page_extra" in response.text:
+                results["telegram"] = {
+                    "url": tg_url,
+                    "exists": True,
+                    "method": "по номеру"
+                }
+            else:
+                # Проверка через поиск
+                search_url = f"https://t.me/s/{clean_phone}"
+                response2 = requests.get(search_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+                if response2.status_code == 200:
+                    results["telegram"] = {
+                        "url": search_url,
+                        "exists": True,
+                        "method": "поиск"
+                    }
+                else:
+                    results["telegram"] = {"exists": False, "message": "❌ Не найден"}
+        except:
+            results["telegram"] = {"exists": False, "error": "❌ Ошибка проверки"}
+        
+        current_step += 1
+        if progress_callback:
+            progress_callback(current_step, total_steps, steps[1][0])
+        
+        # Проверка через GetContact (API нет, проверяем через сайт)
+        try:
+            clean_phone = re.sub(r'[^0-9]', '', target)
+            # GetContact проверка через публичную страницу
+            gc_url = f"https://api.getcontact.com/number/{clean_phone}"
+            # Это публичный эндпоинт, может не работать
+            response = requests.get(gc_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            if response.status_code == 200:
+                results["getcontact"] = {"exists": True, "data": response.text[:200]}
+            else:
+                results["getcontact"] = {"exists": False, "message": "❌ Не найден в базе"}
+        except:
+            results["getcontact"] = {"exists": False, "error": "❌ Ошибка проверки"}
+        
+        current_step += 1
+        if progress_callback:
+            progress_callback(current_step, total_steps, steps[2][0])
+    
+    # ===== EMAIL =====
+    if results["type"] == "email":
         try:
             url = f"https://haveibeenpwned.com/api/v3/breachedaccount/{target}"
             response = requests.get(url, timeout=10, headers={"User-Agent": "OSINT-Scanner"})
@@ -176,67 +388,80 @@ def osint_scan(target, progress_callback=None):
             results["breaches"] = ["❌ Ошибка соединения"]
         except Exception as e:
             results["breaches"] = [f"❌ Ошибка: {str(e)[:50]}"]
+        
+        current_step += 1
+        if progress_callback:
+            progress_callback(current_step, total_steps, steps[0][0])
     
-    current_step += 1
-    if progress_callback:
-        progress_callback(current_step, total_steps, steps[0][0])
-    
-    if "@" in target:
+    # ===== ID и USERNAME (общий поиск по соцсетям) =====
+    if results["type"] in ["id", "username"]:
+        # Telegram
         try:
-            possible_username = target.split("@")[0].replace(".", "").lower()
-            tg_url = f"https://t.me/{possible_username}"
-            response = requests.get(tg_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            if results["type"] == "id":
+                tg_check = f"https://t.me/id{target}"
+            else:
+                tg_check = f"https://t.me/{target}"
+            response = requests.get(tg_check, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             if response.status_code == 200 and "tgme_page_extra" in response.text:
                 results["telegram"] = {
-                    "username": possible_username,
-                    "url": tg_url,
+                    "url": tg_check,
                     "exists": True
                 }
             else:
                 results["telegram"] = {"exists": False, "message": "❌ Не найден"}
         except:
             results["telegram"] = {"exists": False, "error": "❌ Ошибка проверки"}
+        
+        current_step += 1
+        if progress_callback and current_step <= len(steps):
+            progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
+        
+        # VK
+        try:
+            if results["type"] == "id":
+                vk_url = f"https://vk.com/id{target}"
+            else:
+                vk_url = f"https://vk.com/{target}"
+            response = requests.get(vk_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            if response.status_code == 200 and "page_name" in response.text.lower():
+                results["vk"] = {
+                    "url": vk_url,
+                    "exists": True
+                }
+            else:
+                results["vk"] = {"exists": False, "message": "❌ Не найден"}
+        except:
+            results["vk"] = {"exists": False, "error": "❌ Ошибка проверки"}
+        
+        current_step += 1
+        if progress_callback and current_step <= len(steps):
+            progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
+        
+        # Instagram (только для username, ID через Instagram не работает)
+        if results["type"] == "username":
+            try:
+                inst_url = f"https://instagram.com/{target}"
+                response = requests.get(inst_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+                if response.status_code == 200 and "instagram" in response.text.lower():
+                    results["instagram"] = {
+                        "url": inst_url,
+                        "exists": True
+                    }
+                else:
+                    results["instagram"] = {"exists": False, "message": "❌ Не найден"}
+            except:
+                results["instagram"] = {"exists": False, "error": "❌ Ошибка проверки"}
+            
+            current_step += 1
+            if progress_callback and current_step <= len(steps):
+                progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
     
-    current_step += 1
-    if progress_callback:
-        progress_callback(current_step, total_steps, steps[1][0])
-    
-    try:
-        search_query = target.split("@")[0] if "@" in target else target
-        vk_urls = [
-            f"https://vk.com/{search_query}",
-            f"https://vk.com/id{search_query}" if search_query.isdigit() else None
-        ]
-        found = False
-        for vk_url in vk_urls:
-            if vk_url:
-                try:
-                    r = requests.get(vk_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-                    if r.status_code == 200 and "page_name" in r.text.lower():
-                        results["vk"] = {
-                            "url": vk_url,
-                            "exists": True,
-                            "profile": "Найден в VK"
-                        }
-                        found = True
-                        break
-                except:
-                    pass
-        if not found:
-            results["vk"] = {"exists": False, "message": "❌ Не найден"}
-    except:
-        results["vk"] = {"exists": False, "error": "❌ Ошибка проверки"}
-    
-    current_step += 1
-    if progress_callback:
-        progress_callback(current_step, total_steps, steps[2][0])
-    
-    if not "@" in target and "." not in target:
+    # ===== USERNAME (соцсети) =====
+    if results["type"] == "username":
         socials = {
             "GitHub": f"https://github.com/{target}",
             "Twitter": f"https://twitter.com/{target}",
             "Reddit": f"https://reddit.com/user/{target}",
-            "Instagram": f"https://instagram.com/{target}",
             "YouTube": f"https://youtube.com/@{target}",
             "TikTok": f"https://tiktok.com/@{target}"
         }
@@ -247,12 +472,14 @@ def osint_scan(target, progress_callback=None):
                     results["social"][name] = url
             except:
                 pass
+        
+        if len(steps) > 0 and current_step < len(steps):
+            current_step += 1
+            if progress_callback:
+                progress_callback(current_step, total_steps, steps[current_step-1][0] if steps else ("", ""))
     
-    current_step += 1
-    if progress_callback:
-        progress_callback(current_step, total_steps, steps[3][0])
-    
-    if "." in target and not "@" in target:
+    # ===== DOMAIN =====
+    if results["type"] == "domain":
         try:
             import whois
             domain_info = whois.whois(target)
@@ -263,10 +490,10 @@ def osint_scan(target, progress_callback=None):
             }
         except Exception as e:
             results["whois"] = {"error": f"❌ Ошибка: {str(e)[:50]}"}
-    
-    current_step += 1
-    if progress_callback:
-        progress_callback(current_step, total_steps, steps[4][0])
+        
+        current_step += 1
+        if progress_callback:
+            progress_callback(current_step, total_steps, steps[0][0])
     
     return results
 
@@ -276,8 +503,26 @@ def print_results(data):
     print(Fore.CYAN + "╚════════════════════════════════════════╝\n")
     
     print(Fore.YELLOW + f"🎯 Цель: {Fore.WHITE}{data['target']}")
+    print(Fore.YELLOW + f"📌 Тип: {Fore.WHITE}{data['type']}")
     print(Fore.YELLOW + f"🕐 Время: {Fore.WHITE}{data['timestamp'][:19]}\n")
     
+    # Phone info
+    if data.get('phone_info'):
+        print(Fore.CYAN + "📞 ИНФОРМАЦИЯ О НОМЕРЕ:")
+        for key, value in data['phone_info'].items():
+            if value:
+                print(f"   {Fore.WHITE}{key.capitalize()}: {Fore.GREEN}{value}")
+        print()
+    
+    # GetContact
+    if data.get('getcontact'):
+        if data['getcontact'].get('exists'):
+            print(Fore.BLUE + f"📘 GETCONTACT: {Fore.WHITE}Найден в базе")
+        else:
+            print(Fore.RED + f"📘 GETCONTACT: {data['getcontact'].get('message', '❌ Не найден')}")
+        print()
+    
+    # Утечки
     if data['breaches']:
         print(Fore.RED + "💀 УТЕЧКИ:")
         for breach in data['breaches']:
@@ -289,13 +534,17 @@ def print_results(data):
                 print(f"   {Fore.RED}• {breach}")
         print()
     
+    # Telegram
     if data.get('telegram'):
         if data['telegram'].get('exists'):
             print(Fore.BLUE + f"📱 TELEGRAM: {Fore.WHITE}{data['telegram']['url']}")
+            if data['telegram'].get('method'):
+                print(f"   {Fore.WHITE}Метод: {Fore.CYAN}{data['telegram']['method']}")
         else:
             print(Fore.RED + f"📱 TELEGRAM: {data['telegram'].get('message', '❌ Не найден')}")
         print()
     
+    # VK
     if data.get('vk'):
         if data['vk'].get('exists'):
             print(Fore.BLUE + f"📘 VK: {Fore.WHITE}{data['vk']['url']}")
@@ -303,200 +552,20 @@ def print_results(data):
             print(Fore.RED + f"📘 VK: {data['vk'].get('message', '❌ Не найден')}")
         print()
     
+    # Instagram
+    if data.get('instagram'):
+        if data['instagram'].get('exists'):
+            print(Fore.MAGENTA + f"📸 INSTAGRAM: {Fore.WHITE}{data['instagram']['url']}")
+        else:
+            print(Fore.RED + f"📸 INSTAGRAM: {data['instagram'].get('message', '❌ Не найден')}")
+        print()
+    
+    # Соцсети
     if data['social']:
         print(Fore.MAGENTA + "🌐 СОЦИАЛЬНЫЕ СЕТИ:")
         for name, url in data['social'].items():
             print(f"   {Fore.CYAN}{name}: {Fore.WHITE}{url}")
         print()
     
-    if data.get('whois'):
-        print(Fore.GREEN + "🏷️ WHOIS-ДАННЫЕ:")
-        for key, value in data['whois'].items():
-            if value and not key == "error":
-                print(f"   {Fore.CYAN}{key.capitalize()}: {Fore.WHITE}{value}")
-        if data['whois'].get('error'):
-            print(f"   {Fore.RED}{data['whois']['error']}")
-        print()
-    
-    safe_target = data['target'].replace('@', '_').replace('.', '_').replace('/', '_')
-    filename = f"osint_report_{safe_target}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    try:
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(Fore.GREEN + f"✅ Отчёт сохранён: {Fore.WHITE}{filename}\n")
-    except Exception as e:
-        print(Fore.RED + f"❌ Ошибка сохранения: {e}\n")
-
-def show_info():
-    print(Fore.CYAN + "\n╔════════════════════════════════════════╗")
-    print(Fore.CYAN + "║           ℹ️  ИНФОРМАЦИЯ              ║")
-    print(Fore.CYAN + "╚════════════════════════════════════════╝\n")
-    print(Fore.WHITE + "🔹 Название: OSINT Scanner Pro v2.0")
-    print(Fore.WHITE + f"🔹 Автор: @{GITHUB_NICKNAME}")
-    print(Fore.WHITE + "🔹 Описание: Инструмент для поиска информации")
-    print(Fore.WHITE + "           по открытым источникам")
-    print()
-    print(Fore.CYAN + "📌 Функции:")
-    print(Fore.WHITE + "  • Проверка утечек (HaveIBeenPwned)")
-    print(Fore.WHITE + "  • Поиск в Telegram")
-    print(Fore.WHITE + "  • Поиск в VK")
-    print(Fore.WHITE + "  • Поиск в соцсетях (GitHub, Twitter, Instagram...)")
-    print(Fore.WHITE + "  • WHOIS для доменов")
-    print(Fore.WHITE + "  • Сохранение отчётов в JSON")
-    print()
-    print(Fore.GREEN + "🔗 GitHub: https://github.com/" + GITHUB_NICKNAME + "/Osint\n")
-
-def main():
-    print_banner()
-    
-    try:
-        requests.get("https://google.com", timeout=5)
-        print(Fore.GREEN + "✅ Интернет доступен\n")
-    except:
-        print(Fore.RED + "⚠️ Нет подключения к интернету!\n")
-        print(Fore.YELLOW + "Некоторые функции могут не работать\n")
-    
-    check_and_install_packages()
-    
-    while True:
-        print_banner()
-        print_menu()
-        
-        choice = input(f"\n{Fore.GREEN}└─ Выберите опцию (1-5): {Fore.WHITE}").strip()
-        
-        if choice == "1":
-            print_banner()
-            print(Fore.CYAN + "╔════════════════════════════════════════╗")
-            print(Fore.CYAN + "║         🔍  НОВОЕ СКАНИРОВАНИЕ        ║")
-            print(Fore.CYAN + "╚════════════════════════════════════════╝\n")
-            
-            target = input(f"{Fore.YELLOW}📝 Введите email, username или домен: {Fore.WHITE}").strip()
-            
-            if not target:
-                print(Fore.RED + "\n❌ Ошибка: цель не может быть пустой!")
-                time.sleep(2)
-                continue
-            
-            print(f"\n{Fore.CYAN}🔍 Начинаем сканирование: {Fore.WHITE}{target}\n")
-            print(Fore.YELLOW + "⏳ Это может занять некоторое время...\n")
-            
-            try:
-                results = osint_scan(target, progress_callback=progress_bar)
-                print("\n\n")
-                print_results(results)
-            except Exception as e:
-                print(Fore.RED + f"\n❌ Ошибка при сканировании: {str(e)}")
-            
-            input(f"\n{Fore.YELLOW}Нажмите Enter для продолжения...")
-        
-        elif choice == "2":
-            print_banner()
-            print(Fore.CYAN + "╔════════════════════════════════════════╗")
-            print(Fore.CYAN + "║         📂  ПРОСМОТР ОТЧЁТОВ          ║")
-            print(Fore.CYAN + "╚════════════════════════════════════════╝\n")
-            
-            try:
-                reports = [f for f in os.listdir(".") if f.startswith("osint_report_") and f.endswith(".json")]
-            except:
-                reports = []
-            
-            if not reports:
-                print(Fore.YELLOW + "⚠️ Отчётов не найдено")
-                input(f"\n{Fore.YELLOW}Нажмите Enter для продолжения...")
-                continue
-            
-            reports.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-            print(Fore.CYAN + "📋 Доступные отчёты:\n")
-            for i, report in enumerate(reports[:10], 1):
-                try:
-                    size = os.path.getsize(report)
-                    if size < 1024:
-                        size_str = f"{size} байт"
-                    elif size < 1048576:
-                        size_str = f"{size/1024:.1f} КБ"
-                    else:
-                        size_str = f"{size/1048576:.1f} МБ"
-                    print(f"  {Fore.GREEN}{i}.{Fore.WHITE} {report} {Fore.YELLOW}({size_str})")
-                except:
-                    print(f"  {Fore.GREEN}{i}.{Fore.WHITE} {report}")
-            
-            choice2 = input(f"\n{Fore.GREEN}Выберите номер отчёта (или Enter для отмены): {Fore.WHITE}")
-            if choice2.isdigit() and 1 <= int(choice2) <= len(reports[:10]):
-                filename = reports[int(choice2)-1]
-                try:
-                    with open(filename, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        print(Fore.CYAN + "\n" + "═" * 50)
-                        print(json.dumps(data, indent=2, ensure_ascii=False))
-                        print(Fore.CYAN + "═" * 50 + "\n")
-                except Exception as e:
-                    print(Fore.RED + f"❌ Ошибка чтения файла: {e}")
-            
-            input(f"\n{Fore.YELLOW}Нажмите Enter для продолжения...")
-        
-        elif choice == "3":
-            print_banner()
-            print(Fore.CYAN + "╔════════════════════════════════════════╗")
-            print(Fore.CYAN + "║         🗑️  ОЧИСТКА ОТЧЁТОВ           ║")
-            print(Fore.CYAN + "╚════════════════════════════════════════╝\n")
-            
-            try:
-                reports = [f for f in os.listdir(".") if f.startswith("osint_report_") and f.endswith(".json")]
-            except:
-                reports = []
-            
-            if not reports:
-                print(Fore.YELLOW + "⚠️ Отчётов не найдено")
-                time.sleep(1)
-                continue
-            
-            print(Fore.RED + "⚠️ ВНИМАНИЕ: Это действие необратимо!")
-            print(Fore.YELLOW + f"Найдено {len(reports)} отчётов")
-            confirm = input(f"\n{Fore.RED}Удалить все отчёты? (y/n): {Fore.WHITE}")
-            
-            if confirm.lower() == "y":
-                count = 0
-                for f in reports:
-                    try:
-                        os.remove(f)
-                        count += 1
-                    except:
-                        pass
-                print(Fore.GREEN + f"\n✅ Удалено {count} файлов")
-            else:
-                print(Fore.GREEN + "\n✅ Операция отменена")
-            
-            time.sleep(1)
-        
-        elif choice == "4":
-            print_banner()
-            show_info()
-            input(f"\n{Fore.YELLOW}Нажмите Enter для продолжения...")
-        
-        elif choice == "5":
-            print_banner()
-            print(Fore.CYAN + "\n╔════════════════════════════════════════╗")
-            print(Fore.CYAN + "║    👋  ДО СВИДАНИЯ!                   ║")
-            print(Fore.CYAN + "║    🐼  ПАНДА ГОВОРИТ: ДО ВСТРЕЧИ!     ║")
-            print(Fore.CYAN + "╚════════════════════════════════════════╝\n")
-            print(Fore.GREEN + "Спасибо за использование OSINT Scanner Pro!\n")
-            sys.exit(0)
-        
-        else:
-            print(Fore.RED + "\n❌ Неверный ввод! Выберите 1-5")
-            time.sleep(1)
-
-# ============================================
-# ЗАПУСК
-# ============================================
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print(Fore.YELLOW + "\n\n⚠️ Программа прервана пользователем")
-        sys.exit(0)
-    except Exception as e:
-        print(Fore.RED + f"\n❌ Критическая ошибка: {str(e)}")
-        print(Fore.YELLOW + "Пожалуйста, сообщите об ошибке автору")
-        sys.exit(1)
+    # WHOIS
+    if data.get('whois
